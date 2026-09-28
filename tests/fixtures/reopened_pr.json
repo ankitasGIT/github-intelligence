@@ -1,0 +1,50 @@
+{
+  "scenario": "reopened_pr",
+  "description": "PR_503 was closed without merging, then reopened a day later and eventually merged. Confirms cycle time, review-wait, and merge-wait all EXCLUDE it (its elapsed span includes an unknown closed period that would badly distort any duration metric), while the two normal PRs alongside it still compute correctly. PR size is NOT affected by the reopen exclusion (line-count isn't a duration metric), so all three PRs count there. Baseline is intentionally empty -- this fixture isolates the exclusion filter, not a trend calculation.",
+  "analysis_at": "2026-09-25T09:00:00Z",
+  "window": {
+    "current_start": "2026-09-18T09:00:00Z", "current_end": "2026-09-25T09:00:00Z",
+    "baseline_start": "2026-08-19T09:00:00Z", "baseline_end": "2026-09-18T09:00:00Z"
+  },
+  "repository": { "github_node_id": "R_1", "full_name": "acme-commerce/backend" },
+  "pull_requests": [
+    { "github_node_id": "PR_501", "number": 501, "author": "alice", "is_draft": false, "ready_for_review_at": null,
+      "created_at": "2026-09-20T09:00:00Z", "updated_at": "2026-09-20T14:00:00Z", "closed_at": null, "merged_at": "2026-09-20T14:00:00Z",
+      "reopened": false, "reopen_count": 0, "additions": 30, "deletions": 10, "changed_files": 3,
+      "requested_reviewers": [], "reviews": [{ "reviewer": "rahul", "state": "APPROVED", "submitted_at": "2026-09-20T12:00:00Z" }] },
+    { "github_node_id": "PR_502", "number": 502, "author": "bob", "is_draft": false, "ready_for_review_at": null,
+      "created_at": "2026-09-21T09:00:00Z", "updated_at": "2026-09-21T15:00:00Z", "closed_at": null, "merged_at": "2026-09-21T15:00:00Z",
+      "reopened": false, "reopen_count": 0, "additions": 35, "deletions": 15, "changed_files": 3,
+      "requested_reviewers": [], "reviews": [{ "reviewer": "priya", "state": "APPROVED", "submitted_at": "2026-09-21T13:00:00Z" }] },
+    { "github_node_id": "PR_503", "number": 503, "author": "carol", "is_draft": false, "ready_for_review_at": null,
+      "created_at": "2026-09-18T09:00:00Z", "first_closed_at": "2026-09-19T09:00:00Z", "reopened_at": "2026-09-20T09:00:00Z",
+      "updated_at": "2026-09-20T16:00:00Z", "closed_at": null, "merged_at": "2026-09-21T09:00:00Z",
+      "reopened": true, "reopen_count": 1, "additions": 25, "deletions": 10, "changed_files": 2,
+      "requested_reviewers": [],
+      "reviews": [{ "reviewer": "rahul", "state": "APPROVED", "submitted_at": "2026-09-20T16:00:00Z" }],
+      "note": "closed for 24h before being reopened; excluded from every duration metric per policy. A naive (buggy) implementation that ignores `reopened` would compute review-wait=55h and cycle-time=72h from created_at -- both are the exact misleading numbers this exclusion prevents." }
+  ],
+  "issues": [],
+  "expected": {
+    "pr_cycle_time": {
+      "current": { "median_hours": 5.5, "n": 2, "meets_minimum_sample": false, "excluded_reopened": 1 },
+      "baseline": { "median_hours": null, "n": 0, "meets_minimum_sample": false },
+      "pct_change": null
+    },
+    "review_wait": {
+      "current": { "median_hours": 3.5, "n": 2, "meets_minimum_sample": false, "excluded_reopened": 1 },
+      "baseline": { "median_hours": null, "n": 0, "meets_minimum_sample": false },
+      "pct_change": null
+    },
+    "merge_wait": {
+      "current": { "median_hours": 2, "n": 2, "meets_minimum_sample": false, "excluded_no_approval": 0, "excluded_reopened": 1 }
+    },
+    "pending_review_count": 0,
+    "review_concentration": "insufficient_data",
+    "stale_prs": { "count": 0, "threshold_days": 5, "items": [] },
+    "issue_backlog_growth": "insufficient_data",
+    "pr_size": { "current": { "median_lines": 40, "n": 3, "meets_minimum_sample": false }, "oversized_threshold_lines": 400, "oversized_count": 0 },
+    "findings_expected": [],
+    "findings_rationale": "No rule fires (samples are all below n_min after correctly excluding PR_503 from every duration metric). This fixture's purpose is the exclusion filter itself, verified via the `excluded_reopened` counts, not a finding."
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "scenario": "timezone_boundary",
+  "description": "Window filtering must be exact: [current_start, current_end) with an inclusive lower bound and exclusive upper bound. PR_801 sits exactly on current_start (included), PR_802 one second before it (excluded from current, falls into baseline), PR_803 exactly on current_end == analysis_at (excluded from current -- it hasn't existed for any duration within the window yet), and PR_804 crosses a UTC midnight rollover to catch date-only comparison bugs.",
+  "analysis_at": "2026-09-25T09:00:00Z",
+  "window": {
+    "current_start": "2026-09-18T09:00:00Z", "current_end": "2026-09-25T09:00:00Z",
+    "baseline_start": "2026-08-19T09:00:00Z", "baseline_end": "2026-09-18T09:00:00Z"
+  },
+  "repository": { "github_node_id": "R_1", "full_name": "acme-commerce/backend" },
+  "pull_requests": [
+    { "github_node_id": "PR_801", "number": 801, "author": "alice", "is_draft": false, "ready_for_review_at": null,
+      "created_at": "2026-09-18T09:00:00Z", "updated_at": "2026-09-18T15:00:00Z", "closed_at": null, "merged_at": "2026-09-18T15:00:00Z",
+      "reopened": false, "reopen_count": 0, "additions": 20, "deletions": 10, "changed_files": 2,
+      "requested_reviewers": [], "reviews": [{ "reviewer": "rahul", "state": "APPROVED", "submitted_at": "2026-09-18T13:00:00Z" }],
+      "note": "created exactly AT current_start -- included in current window (inclusive lower bound)" },
+    { "github_node_id": "PR_802", "number": 802, "author": "bob", "is_draft": false, "ready_for_review_at": null,
+      "created_at": "2026-09-18T08:59:59Z", "updated_at": "2026-09-18T14:59:59Z", "closed_at": null, "merged_at": "2026-09-18T14:59:59Z",
+      "reopened": false, "reopen_count": 0, "additions": 25, "deletions": 5, "changed_files": 2,
+      "requested_reviewers": [], "reviews": [{ "reviewer": "priya", "state": "APPROVED", "submitted_at": "2026-09-18T12:59:59Z" }],
+      "note": "created ONE SECOND before current_start -- excluded from current window, falls into baseline instead (baseline_end is exclusive and equals current_start)" },
+    { "github_node_id": "PR_803", "number": 803, "author": "carol", "is_draft": false, "ready_for_review_at": null,
+      "created_at": "2026-09-25T09:00:00Z", "updated_at": "2026-09-25T09:00:00Z", "closed_at": null, "merged_at": null,
+      "reopened": false, "reopen_count": 0, "additions": 10, "deletions": 5, "changed_files": 1,
+      "requested_reviewers": [], "reviews": [],
+      "note": "created exactly AT current_end == analysis_at -- excluded from current window (exclusive upper bound); still counts in point-in-time pending_review_count with 0 days idle" },
+    { "github_node_id": "PR_804", "number": 804, "author": "dave", "is_draft": false, "ready_for_review_at": null,
+      "created_at": "2026-09-21T23:30:00Z", "updated_at": "2026-09-22T01:00:00Z", "closed_at": null, "merged_at": "2026-09-22T01:00:00Z",
+      "reopened": false, "reopen_count": 0, "additions": 15, "deletions": 5, "changed_files": 2,
+      "requested_reviewers": [], "reviews": [{ "reviewer": "rahul", "state": "APPROVED", "submitted_at": "2026-09-22T00:15:00Z" }],
+      "note": "crosses UTC midnight between creation and merge -- catches date-only (instead of full timestamp) comparison bugs" }
+  ],
+  "issues": [],
+  "expected": {
+    "pr_cycle_time": {
+      "current": { "median_hours": 3.75, "n": 2, "meets_minimum_sample": false, "included": [801, 804] },
+      "baseline": { "median_hours": 6, "n": 1, "meets_minimum_sample": false, "included": [802] },
+      "pct_change": -37.5
+    },
+    "review_wait": {
+      "current": { "median_hours": 2.375, "n": 2, "meets_minimum_sample": false, "included": [801, 804] },
+      "baseline": { "median_hours": 4, "n": 1, "meets_minimum_sample": false, "included": [802] },
+      "pct_change": -40.625
+    },
+    "merge_wait": {
+      "current": { "median_hours": 1.375, "n": 2, "meets_minimum_sample": false, "excluded_no_approval": 0 },
+      "baseline": { "median_hours": 2, "n": 1, "meets_minimum_sample": false, "excluded_no_approval": 0 },
+      "pct_change": -31.25
+    },
+    "pending_review_count": 1,
+    "review_concentration": "insufficient_data",
+    "stale_prs": { "count": 0, "threshold_days": 5, "items": [] },
+    "issue_backlog_growth": "insufficient_data",
+    "pr_size": { "current": { "median_lines": 25, "n": 2, "meets_minimum_sample": false }, "oversized_threshold_lines": 400, "oversized_count": 0 },
+    "findings_expected": [],
+    "findings_rationale": "No rule fires -- purpose is exact boundary placement (PR_801 in, PR_802 out to baseline, PR_803 out of both windows entirely) and correct sub-day arithmetic across a UTC midnight (PR_804), not a finding."
+  }
+}

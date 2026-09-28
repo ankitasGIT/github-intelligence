@@ -1,0 +1,24 @@
+{
+  "scenario": "empty_repository",
+  "description": "A freshly connected repository with zero pull requests and zero issues. Every metric must degrade cleanly to insufficient_data / a zero count -- never a crash from dividing by zero, indexing an empty list for a median, or a null-pointer on a missing first review. This is the primary robustness fixture.",
+  "analysis_at": "2026-09-25T09:00:00Z",
+  "window": {
+    "current_start": "2026-09-18T09:00:00Z", "current_end": "2026-09-25T09:00:00Z",
+    "baseline_start": "2026-08-19T09:00:00Z", "baseline_end": "2026-09-18T09:00:00Z"
+  },
+  "repository": { "github_node_id": "R_2", "full_name": "acme-commerce/new-service" },
+  "pull_requests": [],
+  "issues": [],
+  "expected": {
+    "pr_cycle_time": { "current": { "median_hours": null, "n": 0, "meets_minimum_sample": false }, "baseline": { "median_hours": null, "n": 0, "meets_minimum_sample": false }, "pct_change": null },
+    "review_wait": { "current": { "median_hours": null, "n": 0, "meets_minimum_sample": false }, "baseline": { "median_hours": null, "n": 0, "meets_minimum_sample": false }, "pct_change": null },
+    "merge_wait": { "current": { "median_hours": null, "n": 0, "meets_minimum_sample": false, "excluded_no_approval": 0 } },
+    "pending_review_count": 0,
+    "review_concentration": "insufficient_data",
+    "stale_prs": { "count": 0, "threshold_days": 5, "items": [] },
+    "issue_backlog_growth": "insufficient_data",
+    "pr_size": { "current": { "median_lines": null, "n": 0, "meets_minimum_sample": false }, "oversized_threshold_lines": 400, "oversized_count": 0 },
+    "findings_expected": [],
+    "findings_rationale": "No data exists yet, so no rule can evaluate. Every metric must report its explicit empty/insufficient-data state rather than erroring."
+  }
+}

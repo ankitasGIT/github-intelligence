@@ -1,0 +1,50 @@
+{
+  "scenario": "draft_pr",
+  "description": "PR_601 was opened as a draft and later marked ready for review; every duration metric must measure from ready_for_review_at, not the original created_at (the naive created_at-based numbers would be 52h wait / 54h cycle -- both wrong). PR_602 is still currently a draft: it must be excluded from every metric entirely, including pending-review count, since nobody is expected to review it yet. PR_603 was never a draft, included as a normal comparison point.",
+  "analysis_at": "2026-09-25T09:00:00Z",
+  "window": {
+    "current_start": "2026-09-18T09:00:00Z", "current_end": "2026-09-25T09:00:00Z",
+    "baseline_start": "2026-08-19T09:00:00Z", "baseline_end": "2026-09-18T09:00:00Z"
+  },
+  "repository": { "github_node_id": "R_1", "full_name": "acme-commerce/backend" },
+  "pull_requests": [
+    { "github_node_id": "PR_601", "number": 601, "author": "alice", "is_draft": false, "ready_for_review_at": "2026-09-19T09:00:00Z",
+      "created_at": "2026-09-17T09:00:00Z", "updated_at": "2026-09-19T15:00:00Z", "closed_at": null, "merged_at": "2026-09-19T15:00:00Z",
+      "reopened": false, "reopen_count": 0, "additions": 50, "deletions": 10, "changed_files": 4,
+      "requested_reviewers": [], "reviews": [{ "reviewer": "rahul", "state": "APPROVED", "submitted_at": "2026-09-19T13:00:00Z" }],
+      "note": "opened as draft on Sep17, marked ready on Sep19T09:00Z -- every duration metric must anchor to ready_for_review_at, not created_at" },
+    { "github_node_id": "PR_602", "number": 602, "author": "bob", "is_draft": true, "ready_for_review_at": null,
+      "created_at": "2026-09-22T09:00:00Z", "updated_at": "2026-09-22T09:00:00Z", "closed_at": null, "merged_at": null,
+      "reopened": false, "reopen_count": 0, "additions": 15, "deletions": 5, "changed_files": 2,
+      "requested_reviewers": [], "reviews": [],
+      "note": "still a draft at analysis_at -- excluded from every metric, including pending_review_count" },
+    { "github_node_id": "PR_603", "number": 603, "author": "carol", "is_draft": false, "ready_for_review_at": null,
+      "created_at": "2026-09-20T09:00:00Z", "updated_at": "2026-09-20T14:00:00Z", "closed_at": null, "merged_at": "2026-09-20T14:00:00Z",
+      "reopened": false, "reopen_count": 0, "additions": 20, "deletions": 10, "changed_files": 2,
+      "requested_reviewers": [], "reviews": [{ "reviewer": "priya", "state": "APPROVED", "submitted_at": "2026-09-20T12:00:00Z" }],
+      "note": "never a draft -- normal comparison PR" }
+  ],
+  "issues": [],
+  "expected": {
+    "pr_cycle_time": {
+      "current": { "median_hours": 5.5, "n": 2, "meets_minimum_sample": false, "excluded_draft": 1 },
+      "baseline": { "median_hours": null, "n": 0, "meets_minimum_sample": false },
+      "pct_change": null
+    },
+    "review_wait": {
+      "current": { "median_hours": 3.5, "n": 2, "meets_minimum_sample": false, "excluded_draft": 1 },
+      "baseline": { "median_hours": null, "n": 0, "meets_minimum_sample": false },
+      "pct_change": null
+    },
+    "merge_wait": {
+      "current": { "median_hours": 2, "n": 2, "meets_minimum_sample": false, "excluded_no_approval": 0 }
+    },
+    "pending_review_count": 0,
+    "review_concentration": "insufficient_data",
+    "stale_prs": { "count": 0, "threshold_days": 5, "items": [] },
+    "issue_backlog_growth": "insufficient_data",
+    "pr_size": { "current": { "median_lines": 45, "n": 2, "meets_minimum_sample": false }, "oversized_threshold_lines": 400, "oversized_count": 0 },
+    "findings_expected": [],
+    "findings_rationale": "No rule fires -- samples below n_min throughout. PR_601's review-wait (4h from ready_for_review_at) and PR_603's (3h) give median 3.5h/n=2; if a buggy implementation used created_at for PR_601 instead, review-wait would be 52h and cycle-time 54h -- this fixture exists to catch exactly that bug."
+  }
+}
