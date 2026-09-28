@@ -1,0 +1,45 @@
+{
+  "scenario": "missing_approval",
+  "description": "PR_701 received a CHANGES_REQUESTED review but was merged anyway (e.g. an admin override) without ever getting an APPROVED review. Confirms merge-wait time correctly EXCLUDES it and discloses the exclusion via excluded_no_approval, rather than crashing on a missing first_approved_at or silently treating it as zero. Review-wait is unaffected -- a review of any state still counts for that metric.",
+  "analysis_at": "2026-09-25T09:00:00Z",
+  "window": {
+    "current_start": "2026-09-18T09:00:00Z", "current_end": "2026-09-25T09:00:00Z",
+    "baseline_start": "2026-08-19T09:00:00Z", "baseline_end": "2026-09-18T09:00:00Z"
+  },
+  "repository": { "github_node_id": "R_1", "full_name": "acme-commerce/backend" },
+  "pull_requests": [
+    { "github_node_id": "PR_701", "number": 701, "author": "alice", "is_draft": false, "ready_for_review_at": null,
+      "created_at": "2026-09-20T09:00:00Z", "updated_at": "2026-09-20T15:00:00Z", "closed_at": null, "merged_at": "2026-09-20T15:00:00Z",
+      "reopened": false, "reopen_count": 0, "additions": 45, "deletions": 15, "changed_files": 4,
+      "requested_reviewers": [], "reviews": [{ "reviewer": "rahul", "state": "CHANGES_REQUESTED", "submitted_at": "2026-09-20T12:00:00Z" }],
+      "note": "merged despite CHANGES_REQUESTED and no approval -- an admin-override merge" },
+    { "github_node_id": "PR_702", "number": 702, "author": "bob", "is_draft": false, "ready_for_review_at": null,
+      "created_at": "2026-09-21T09:00:00Z", "updated_at": "2026-09-21T14:00:00Z", "closed_at": null, "merged_at": "2026-09-21T14:00:00Z",
+      "reopened": false, "reopen_count": 0, "additions": 20, "deletions": 10, "changed_files": 2,
+      "requested_reviewers": [], "reviews": [{ "reviewer": "priya", "state": "APPROVED", "submitted_at": "2026-09-21T12:00:00Z" }] }
+  ],
+  "issues": [],
+  "expected": {
+    "pr_cycle_time": {
+      "current": { "median_hours": 5.5, "n": 2, "meets_minimum_sample": false },
+      "baseline": { "median_hours": null, "n": 0, "meets_minimum_sample": false },
+      "pct_change": null
+    },
+    "review_wait": {
+      "current": { "median_hours": 3, "n": 2, "meets_minimum_sample": false },
+      "baseline": { "median_hours": null, "n": 0, "meets_minimum_sample": false },
+      "pct_change": null,
+      "note": "both PRs have a review of some state, so both count here regardless of the missing-approval exclusion that applies only to merge-wait"
+    },
+    "merge_wait": {
+      "current": { "median_hours": 2, "n": 1, "meets_minimum_sample": false, "excluded_no_approval": 1 }
+    },
+    "pending_review_count": 0,
+    "review_concentration": "insufficient_data",
+    "stale_prs": { "count": 0, "threshold_days": 5, "items": [] },
+    "issue_backlog_growth": "insufficient_data",
+    "pr_size": { "current": { "median_lines": 45, "n": 2, "meets_minimum_sample": false }, "oversized_threshold_lines": 400, "oversized_count": 0 },
+    "findings_expected": [],
+    "findings_rationale": "No rule fires -- samples below n_min throughout. This fixture's purpose is the excluded_no_approval disclosure on merge-wait (n=1, excluded_no_approval=1), not a finding."
+  }
+}

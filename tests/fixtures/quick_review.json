@@ -1,0 +1,70 @@
+{
+  "scenario": "quick_review",
+  "description": "Healthy baseline: PRs reviewed and merged quickly in both windows, small changes only. Sanity-checks median/merge-wait math with easily hand-verified numbers. Also demonstrates that n < n_min (4 < 5) correctly displays as insufficient_data even though the raw numbers are perfectly computable.",
+  "analysis_at": "2026-09-25T09:00:00Z",
+  "window": {
+    "current_start": "2026-09-18T09:00:00Z", "current_end": "2026-09-25T09:00:00Z",
+    "baseline_start": "2026-08-19T09:00:00Z", "baseline_end": "2026-09-18T09:00:00Z"
+  },
+  "repository": { "github_node_id": "R_1", "full_name": "acme-commerce/backend" },
+  "pull_requests": [
+    { "github_node_id": "PR_201", "number": 201, "author": "alice", "is_draft": false, "ready_for_review_at": null,
+      "created_at": "2026-09-19T10:00:00Z", "updated_at": "2026-09-19T16:00:00Z", "closed_at": null, "merged_at": "2026-09-19T16:00:00Z",
+      "reopened": false, "reopen_count": 0, "additions": 40, "deletions": 10, "changed_files": 3,
+      "requested_reviewers": [], "reviews": [{ "reviewer": "rahul", "state": "APPROVED", "submitted_at": "2026-09-19T14:00:00Z" }] },
+    { "github_node_id": "PR_202", "number": 202, "author": "bob", "is_draft": false, "ready_for_review_at": null,
+      "created_at": "2026-09-20T09:00:00Z", "updated_at": "2026-09-20T13:00:00Z", "closed_at": null, "merged_at": "2026-09-20T13:00:00Z",
+      "reopened": false, "reopen_count": 0, "additions": 20, "deletions": 10, "changed_files": 2,
+      "requested_reviewers": [], "reviews": [{ "reviewer": "priya", "state": "APPROVED", "submitted_at": "2026-09-20T11:00:00Z" }] },
+    { "github_node_id": "PR_203", "number": 203, "author": "carol", "is_draft": false, "ready_for_review_at": null,
+      "created_at": "2026-09-21T08:00:00Z", "updated_at": "2026-09-21T15:00:00Z", "closed_at": null, "merged_at": "2026-09-21T15:00:00Z",
+      "reopened": false, "reopen_count": 0, "additions": 70, "deletions": 20, "changed_files": 5,
+      "requested_reviewers": [], "reviews": [{ "reviewer": "rahul", "state": "APPROVED", "submitted_at": "2026-09-21T12:00:00Z" }] },
+    { "github_node_id": "PR_204", "number": 204, "author": "dave", "is_draft": false, "ready_for_review_at": null,
+      "created_at": "2026-09-22T09:00:00Z", "updated_at": "2026-09-22T12:00:00Z", "closed_at": null, "merged_at": "2026-09-22T12:00:00Z",
+      "reopened": false, "reopen_count": 0, "additions": 15, "deletions": 5, "changed_files": 1,
+      "requested_reviewers": [], "reviews": [{ "reviewer": "priya", "state": "APPROVED", "submitted_at": "2026-09-22T10:30:00Z" }] },
+
+    { "github_node_id": "PR_150", "number": 150, "author": "alice", "is_draft": false, "ready_for_review_at": null,
+      "created_at": "2026-08-25T10:00:00Z", "updated_at": "2026-08-25T16:00:00Z", "closed_at": null, "merged_at": "2026-08-25T16:00:00Z",
+      "reopened": false, "reopen_count": 0, "additions": 35, "deletions": 10, "changed_files": 3,
+      "requested_reviewers": [], "reviews": [{ "reviewer": "rahul", "state": "APPROVED", "submitted_at": "2026-08-25T14:00:00Z" }] },
+    { "github_node_id": "PR_151", "number": 151, "author": "bob", "is_draft": false, "ready_for_review_at": null,
+      "created_at": "2026-08-27T09:00:00Z", "updated_at": "2026-08-27T13:30:00Z", "closed_at": null, "merged_at": "2026-08-27T13:30:00Z",
+      "reopened": false, "reopen_count": 0, "additions": 25, "deletions": 10, "changed_files": 2,
+      "requested_reviewers": [], "reviews": [{ "reviewer": "priya", "state": "APPROVED", "submitted_at": "2026-08-27T11:30:00Z" }] },
+    { "github_node_id": "PR_152", "number": 152, "author": "carol", "is_draft": false, "ready_for_review_at": null,
+      "created_at": "2026-09-01T08:00:00Z", "updated_at": "2026-09-01T14:30:00Z", "closed_at": null, "merged_at": "2026-09-01T14:30:00Z",
+      "reopened": false, "reopen_count": 0, "additions": 45, "deletions": 15, "changed_files": 4,
+      "requested_reviewers": [], "reviews": [{ "reviewer": "rahul", "state": "APPROVED", "submitted_at": "2026-09-01T12:30:00Z" }] },
+    { "github_node_id": "PR_153", "number": 153, "author": "dave", "is_draft": false, "ready_for_review_at": null,
+      "created_at": "2026-09-05T09:00:00Z", "updated_at": "2026-09-05T12:15:00Z", "closed_at": null, "merged_at": "2026-09-05T12:15:00Z",
+      "reopened": false, "reopen_count": 0, "additions": 20, "deletions": 5, "changed_files": 1,
+      "requested_reviewers": [], "reviews": [{ "reviewer": "priya", "state": "APPROVED", "submitted_at": "2026-09-05T10:45:00Z" }] }
+  ],
+  "issues": [],
+  "expected": {
+    "pr_cycle_time": {
+      "current": { "median_hours": 5, "n": 4, "meets_minimum_sample": false },
+      "baseline": { "median_hours": 5.25, "n": 4, "meets_minimum_sample": false },
+      "pct_change": -4.76
+    },
+    "review_wait": {
+      "current": { "median_hours": 3, "n": 4, "meets_minimum_sample": false },
+      "baseline": { "median_hours": 3.25, "n": 4, "meets_minimum_sample": false },
+      "pct_change": -7.69
+    },
+    "merge_wait": {
+      "current": { "median_hours": 2, "n": 4, "meets_minimum_sample": false, "excluded_no_approval": 0 },
+      "baseline": { "median_hours": 2, "n": 4, "meets_minimum_sample": false, "excluded_no_approval": 0 },
+      "pct_change": 0.0
+    },
+    "pending_review_count": 0,
+    "review_concentration": "insufficient_data",
+    "stale_prs": { "count": 0, "threshold_days": 5, "items": [] },
+    "issue_backlog_growth": "insufficient_data",
+    "pr_size": { "current": { "median_lines": 40, "n": 4, "meets_minimum_sample": false }, "oversized_threshold_lines": 400, "oversized_count": 0 },
+    "findings_expected": [],
+    "findings_rationale": "No rule fires: both cycle-time and review-wait moved slightly negative (faster, not slower), and every sample is below n_min anyway, so no trend would be displayed at all."
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "scenario": "no_reviews",
+  "description": "Three open PRs, none reviewed yet, at different ages. Confirms review-wait correctly EXCLUDES PRs with zero reviews (n=0 -> insufficient_data) rather than treating an unreviewed PR as a very-large wait time. Also confirms pending-review count is a point-in-time snapshot independent of creation window (PR_403 was created before the current window but still counts as pending today). Only 2 of the 3 are stale (>=5 days), below the 3-PR minimum, so STALE_PULL_REQUESTS does not fire.",
+  "analysis_at": "2026-09-25T09:00:00Z",
+  "window": {
+    "current_start": "2026-09-18T09:00:00Z", "current_end": "2026-09-25T09:00:00Z",
+    "baseline_start": "2026-08-19T09:00:00Z", "baseline_end": "2026-09-18T09:00:00Z"
+  },
+  "repository": { "github_node_id": "R_1", "full_name": "acme-commerce/backend" },
+  "pull_requests": [
+    { "github_node_id": "PR_401", "number": 401, "author": "alice", "is_draft": false, "ready_for_review_at": null,
+      "created_at": "2026-09-23T09:00:00Z", "updated_at": "2026-09-23T09:00:00Z", "closed_at": null, "merged_at": null,
+      "reopened": false, "reopen_count": 0, "additions": 10, "deletions": 5, "changed_files": 1,
+      "requested_reviewers": [], "reviews": [],
+      "note": "idle 2.0 days -- not stale, created inside current window, zero reviews" },
+    { "github_node_id": "PR_402", "number": 402, "author": "bob", "is_draft": false, "ready_for_review_at": null,
+      "created_at": "2026-09-19T09:00:00Z", "updated_at": "2026-09-19T09:00:00Z", "closed_at": null, "merged_at": null,
+      "reopened": false, "reopen_count": 0, "additions": 20, "deletions": 5, "changed_files": 2,
+      "requested_reviewers": ["dana"], "reviews": [],
+      "note": "idle 6.0 days -- stale, created inside current window, zero reviews, one outstanding review request" },
+    { "github_node_id": "PR_403", "number": 403, "author": "carol", "is_draft": false, "ready_for_review_at": null,
+      "created_at": "2026-09-15T09:00:00Z", "updated_at": "2026-09-15T09:00:00Z", "closed_at": null, "merged_at": null,
+      "reopened": false, "reopen_count": 0, "additions": 30, "deletions": 10, "changed_files": 3,
+      "requested_reviewers": [], "reviews": [],
+      "note": "idle 10.0 days -- stale, created in the baseline window but still open today (point-in-time pending count includes it regardless)" }
+  ],
+  "issues": [],
+  "expected": {
+    "pr_cycle_time": { "current": { "median_hours": null, "n": 0, "meets_minimum_sample": false }, "baseline": { "median_hours": null, "n": 0, "meets_minimum_sample": false }, "pct_change": null },
+    "review_wait": { "current": { "median_hours": null, "n": 0, "meets_minimum_sample": false }, "baseline": { "median_hours": null, "n": 0, "meets_minimum_sample": false }, "pct_change": null },
+    "merge_wait": { "current": { "median_hours": null, "n": 0, "meets_minimum_sample": false, "excluded_no_approval": 0 } },
+    "pending_review_count": 3,
+    "review_concentration": "insufficient_data",
+    "stale_prs": { "count": 2, "threshold_days": 5, "items": [402, 403] },
+    "issue_backlog_growth": "insufficient_data",
+    "pr_size": { "current": { "median_lines": null, "n": 0, "meets_minimum_sample": false }, "oversized_threshold_lines": 400, "oversized_count": 0 },
+    "findings_expected": [],
+    "findings_rationale": "REVIEW_BOTTLENECK cannot evaluate (review-wait sample is n=0 in both windows). STALE_PULL_REQUESTS does not fire: only 2 PRs cross the 5-day threshold, one short of the 3-PR minimum. review_concentration is insufficient_data because only 1 pending PR has an outstanding request, below the 3-PR minimum for that metric."
+  }
+}
