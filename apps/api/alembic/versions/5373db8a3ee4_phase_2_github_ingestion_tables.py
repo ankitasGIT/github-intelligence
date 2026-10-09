@@ -5,17 +5,18 @@ Revises:
 Create Date: 2026-09-28 18:22:07.641317
 
 """
-from typing import Sequence, Union
+from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
+from alembic import op
+
 # revision identifiers, used by Alembic.
 revision: str = '5373db8a3ee4'
-down_revision: Union[str, None] = None
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = None
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -24,7 +25,8 @@ def upgrade() -> None:
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('login', sa.String(), nullable=False),
     sa.Column('encrypted_token', sa.String(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), 
+    nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('repositories',
@@ -34,7 +36,8 @@ def upgrade() -> None:
     sa.Column('owner', sa.String(), nullable=False),
     sa.Column('name', sa.String(), nullable=False),
     sa.Column('full_name', sa.String(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), 
+    nullable=False),
     sa.ForeignKeyConstraint(['github_connection_id'], ['github_connections.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('full_name', name='uq_repositories_full_name'),
@@ -48,7 +51,8 @@ def upgrade() -> None:
     sa.Column('author_login', sa.String(), nullable=True),
     sa.Column('authored_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('message', sa.String(), nullable=False),
-    sa.Column('synced_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('synced_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), 
+    nullable=False),
     sa.ForeignKeyConstraint(['repository_id'], ['repositories.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('repository_id', 'github_node_id', name='uq_commits_repo_node')
@@ -63,12 +67,14 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('closed_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('source_updated_at', sa.DateTime(timezone=True), nullable=False),
-    sa.Column('synced_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('synced_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), 
+    nullable=False),
     sa.ForeignKeyConstraint(['repository_id'], ['repositories.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('repository_id', 'github_node_id', name='uq_issues_repo_node')
     )
-    op.create_index('ix_issues_repo_updated', 'issues', ['repository_id', 'updated_at'], unique=False)
+    op.create_index('ix_issues_repo_updated', 'issues', ['repository_id', 'updated_at'], 
+    unique=False)
     op.create_table('milestones',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('repository_id', sa.UUID(), nullable=False),
@@ -79,7 +85,8 @@ def upgrade() -> None:
     sa.Column('due_on', sa.DateTime(timezone=True), nullable=True),
     sa.Column('open_issues', sa.Integer(), nullable=False),
     sa.Column('closed_issues', sa.Integer(), nullable=False),
-    sa.Column('synced_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('synced_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), 
+    nullable=False),
     sa.ForeignKeyConstraint(['repository_id'], ['repositories.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('repository_id', 'github_node_id', name='uq_milestones_repo_node')
@@ -103,13 +110,18 @@ def upgrade() -> None:
     sa.Column('deletions', sa.Integer(), nullable=False),
     sa.Column('changed_files', sa.Integer(), nullable=False),
     sa.Column('source_updated_at', sa.DateTime(timezone=True), nullable=False),
-    sa.Column('synced_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('synced_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), 
+    nullable=False),
     sa.ForeignKeyConstraint(['repository_id'], ['repositories.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('repository_id', 'github_node_id', name='uq_pull_requests_repo_node')
     )
-    op.create_index('ix_pull_requests_repo_created', 'pull_requests', ['repository_id', 'created_at'], unique=False)
-    op.create_index('ix_pull_requests_repo_updated', 'pull_requests', ['repository_id', 'updated_at'], unique=False)
+    op.create_index('ix_pull_requests_repo_created', 'pull_requests', ['repository_id', 
+    'created_at'], 
+    unique=False)
+    op.create_index('ix_pull_requests_repo_updated', 'pull_requests', ['repository_id', 
+    'updated_at'], 
+    unique=False)
     op.create_table('sync_runs',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('repository_id', sa.UUID(), nullable=False),
@@ -118,22 +130,28 @@ def upgrade() -> None:
     sa.Column('finished_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('error_message', sa.String(), nullable=True),
     sa.Column('stats', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), 
+    nullable=False),
     sa.ForeignKeyConstraint(['repository_id'], ['repositories.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_sync_runs_repository_id'), 'sync_runs', ['repository_id'], unique=False)
+    op.create_index(op.f('ix_sync_runs_repository_id'), 'sync_runs', ['repository_id'],
+    unique=False)
     op.create_table('review_requests',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('pull_request_id', sa.UUID(), nullable=False),
     sa.Column('requested_reviewer_login', sa.String(), nullable=False),
     sa.Column('is_outstanding', sa.Boolean(), nullable=False),
-    sa.Column('synced_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('synced_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), 
+    nullable=False),
     sa.ForeignKeyConstraint(['pull_request_id'], ['pull_requests.id'], ),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('pull_request_id', 'requested_reviewer_login', name='uq_review_requests_pr_reviewer')
+    sa.UniqueConstraint('pull_request_id', 'requested_reviewer_login', 
+    name='uq_review_requests_pr_reviewer')
     )
-    op.create_index(op.f('ix_review_requests_pull_request_id'), 'review_requests', ['pull_request_id'], unique=False)
+    op.create_index(op.f('ix_review_requests_pull_request_id'), 'review_requests', 
+    ['pull_request_id'], 
+    unique=False)
     op.create_table('reviews',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('pull_request_id', sa.UUID(), nullable=False),
@@ -141,12 +159,14 @@ def upgrade() -> None:
     sa.Column('reviewer_login', sa.String(), nullable=False),
     sa.Column('state', sa.String(), nullable=False),
     sa.Column('submitted_at', sa.DateTime(timezone=True), nullable=False),
-    sa.Column('synced_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('synced_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), 
+    nullable=False),
     sa.ForeignKeyConstraint(['pull_request_id'], ['pull_requests.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('pull_request_id', 'github_node_id', name='uq_reviews_pr_node')
     )
-    op.create_index(op.f('ix_reviews_pull_request_id'), 'reviews', ['pull_request_id'], unique=False)
+    op.create_index(op.f('ix_reviews_pull_request_id'), 'reviews', ['pull_request_id'], 
+    unique=False)
     # ### end Alembic commands ###
 
 

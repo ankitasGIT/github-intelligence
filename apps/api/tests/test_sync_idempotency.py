@@ -141,14 +141,16 @@ def test_sync_is_idempotent(db_session, seeded_repository) -> None:
 
     def counts() -> dict[str, int]:
         return {
-            "pull_requests": db_session.execute(select(func.count()).select_from(PullRequest)).scalar_one(),
+            "pull_requests": db_session.execute(select(func.count()).select_from(PullRequest)).
+            scalar_one(),
             "reviews": db_session.execute(select(func.count()).select_from(Review)).scalar_one(),
             "review_requests": db_session.execute(
                 select(func.count()).select_from(ReviewRequest)
             ).scalar_one(),
             "issues": db_session.execute(select(func.count()).select_from(Issue)).scalar_one(),
             "commits": db_session.execute(select(func.count()).select_from(Commit)).scalar_one(),
-            "milestones": db_session.execute(select(func.count()).select_from(Milestone)).scalar_one(),
+            "milestones": db_session.execute(select(func.count()).select_from(Milestone)).
+            scalar_one(),
         }
 
     after_first = counts()
@@ -171,7 +173,9 @@ def test_sync_is_idempotent(db_session, seeded_repository) -> None:
     assert after_second == after_first, "re-running sync must not create duplicate rows"
 
     pr_id_after_second = db_session.execute(select(PullRequest.id)).scalar_one()
-    assert pr_id_after_second == pr_id_after_first, "the same PR must be updated in place, not re-inserted"
+    assert pr_id_after_second == pr_id_after_first, (
+        "the same PR must be updated in place, not re-inserted"
+    )
 
 
 @respx.mock
