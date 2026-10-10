@@ -12,7 +12,9 @@ def test_paginates_across_link_header() -> None:
     page1_url = f"{BASE}/repos/acme/backend/pulls"
     page2_url = f"{BASE}/repos/acme/backend/pulls?page=2"
 
-    route1 = respx.get(page1_url).mock(
+    # Without `params`, respx matches page1_url with *any* query string -- including page 2's --
+    # so route1 would keep returning a `next` link and pagination would never terminate.
+    route1 = respx.get(page1_url, params={"state": "all", "per_page": "100"}).mock(
         return_value=httpx.Response(
             200, json=[{"number": 1}], headers={"Link": f'<{page2_url}>; rel="next"'}
         )
