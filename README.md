@@ -83,13 +83,30 @@ docker compose -f infra/docker/docker-compose.yml down   # add -v to also drop t
 cd apps/api
 python3.12 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
+pip install -e ../../packages/analytics   # editable, so analytics edits apply without reinstalling
+alembic upgrade head
 uvicorn app.main:app --reload   # requires Postgres/Redis reachable at the URLs in .env
 ```
+
+### Metrics
+
+Metric definitions live in [docs/metric-definitions.md](docs/metric-definitions.md) and are computed by the dependency-free `packages/analytics` package. A snapshot is computed automatically after every successful sync, and on demand:
+
+```bash
+curl -X POST "http://localhost:8000/repositories/<id>/metrics/snapshots"                             # as of now
+curl -X POST "http://localhost:8000/repositories/<id>/metrics/snapshots?analysis_at=2026-09-25T09:00:00Z"  # reproducible, as of a fixed instant
+curl "http://localhost:8000/repositories/<id>/metrics"                                                # latest stored snapshot
+```
+
+Every sample-based metric reports its raw value plus `status: "ok" | "insufficient_data"` — small samples are disclosed, never hidden or silently trusted.
 
 ### Tests, lint, and type-check
 
 ```bash
-cd apps/api
+cd packages/analytics          # pure metric logic; no database needed
+ruff check . && mypy src tests && pytest
+
+cd apps/api                    # needs Postgres reachable at DATABASE_URL
 ruff check .
 mypy app
 pytest

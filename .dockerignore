@@ -1,0 +1,12 @@
+# Build context is the repo root; the API Dockerfile only COPYs apps/api and packages/analytics.
+.git
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+**/*.egg-info
+.env
+docs
+tests
+apps/web

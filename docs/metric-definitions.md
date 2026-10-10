@@ -13,7 +13,7 @@ This document is the contract for the analytics engine (Phase 3) and detection e
 
 ## Metric versioning
 
-Every stored `metric_snapshot` records the version of this document (or a `model_version` string once formulas stabilize) alongside its inputs. Changing a formula or threshold is a new version, never a silent edit to historical snapshots.
+Every stored `metric_snapshot` records a `model_version` string alongside its inputs. The current version is **`metrics-v1`** (`analytics.metrics.METRICS_VERSION`). Changing a formula or threshold is a new version, never a silent edit to historical snapshots.
 
 ---
 
@@ -57,7 +57,7 @@ Every stored `metric_snapshot` records the version of this document (or a `model
 
 **Formula:** `merged_at - first_approved_at`, in hours.
 
-**Included:** Merged PRs with at least one `APPROVED` review.
+**Included:** PRs merged within the selected window (same window rule as §1) with at least one `APPROVED` review submitted before the merge.
 **Excluded:** PRs merged without any approval (e.g. an admin override) — the count of excluded PRs is always disclosed alongside the metric, never silently dropped. Reopened PRs excluded (see conventions).
 
 **Reported as:** median, sample size `n`, and `excluded_no_approval` count.
@@ -112,15 +112,29 @@ Every stored `metric_snapshot` records the version of this document (or a `model
 
 ## 8. PR Size
 
-**Definition:** Lines changed per merged PR.
+**Definition:** Lines changed per merged PR, for PRs merged within the selected window (same window rule as §1). Reopened PRs are included — a line count isn't distorted by a closed period.
 
 **Formula:** `additions + deletions`, per PR; reported as median across merged, non-draft PRs in the window, plus the count/share exceeding an oversized threshold.
 
-**Oversized threshold:** `400` lines changed (additions + deletions). This is a documented, tunable constant — not derived per-repository in the MVP.
+**Oversized threshold:** strictly more than `400` lines changed (additions + deletions). This is a documented, tunable constant — not derived per-repository in the MVP.
 
 **Display threshold:** `n_min = 5` for the median; the oversized count/share is shown regardless of `n` since it's a simple count, not a trend.
 
 ---
+
+## Implementation clarifications (metrics-v1)
+
+Decisions the definitions above left open, fixed here so the engine and fixtures agree:
+
+- **Window anchor per metric.** Cycle time, merge-wait, and PR size bucket a PR by **`merged_at`** ("merged within the window"). Review-wait buckets by **reviewable time** (`ready_for_review_at or created_at`). A PR can therefore be baseline for review-wait but current for cycle time — `timezone_boundary.json`'s PR_802 exercises exactly this.
+- **No future data.** Only reviews submitted at or before `analysis_at` count, for every metric, so a snapshot computed "as of" a past instant is reproducible.
+- **Review on a draft.** If a PR's first review predates `ready_for_review_at`, its review-wait is `0`, never negative.
+- **Disclosed exclusions.** Every duration sample reports `excluded_draft` (PRs still in draft whose reviewable time falls in the window), `excluded_reopened`, and — merge-wait only — `excluded_no_approval`, plus the `pr_numbers` it included.
+- **Display status.** Every sample-based metric carries `status: "ok" | "insufficient_data"` next to its raw value. `pct_change` is computed whenever both values exist and the baseline is non-zero, rounded to 4 decimal places; it is `null` otherwise.
+- **Review concentration tie-break.** Equal counts resolve alphabetically by login; a reviewer requested twice on one PR counts once.
+- **Staleness** is inclusive (`>=` threshold) and is reported for both open non-draft PRs and open issues.
+- **"Open at instant T"** (pending count, staleness, backlog): `created_at <= T` and not yet merged/closed at `T`.
+- **Known limitation.** GitHub bumps a PR's `updated_at` when a review is submitted, so on real synced data §4's "no review after the latest update" is true of nearly every open PR. Pending-review count therefore currently approximates "open, non-draft PRs". Refining this needs timeline events (author pushes/comments) and is a future version.
 
 ## Detection rule thresholds (cross-reference)
 
