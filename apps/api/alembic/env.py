@@ -3,11 +3,9 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 
 from alembic import context
+from app import models  # noqa: E402,F401  -- registers all tables on Base.metadata for autogenerate
 from app.core.config import get_settings
 from app.db.base import Base
-
-# Import models here (Phase 2+) so they register on Base.metadata before autogenerate runs.
-# from app.models import pull_request, review, issue, ...  # noqa: E402
 
 config = context.config
 

@@ -13,8 +13,12 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5432/github_intelligence"
     redis_url: str = "redis://localhost:6379/0"
 
-    # Read-only GitHub Personal Access Token. Unused until Phase 2.
+    # Read-only GitHub Personal Access Token.
     github_token: str | None = None
+
+    # Fernet key used to encrypt github_connections.encrypted_token at rest. Generate with:
+    # python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+    token_encryption_key: str | None = None
 
 
 @lru_cache
