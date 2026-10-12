@@ -58,11 +58,11 @@ Goal: real GitHub data lands in Postgres, idempotently.
 
 Goal: every metric from `metric-definitions.md` is computed from stored data and independently testable, with zero FastAPI imports in `packages/analytics`.
 
-- [ ] `packages/analytics/src/metrics/metrics.py`: implement each metric function against the Phase 1 fixtures first, then against real synced data.
-- [ ] `packages/analytics/src/models/models.py`: the plain dataclasses/Pydantic models the analytics package operates on (independent of the API's SQLAlchemy models).
-- [ ] `packages/analytics/src/tests/test_metrics.py`: hand-calculate expected values for each fixture timeline and assert against them — this is the test suite that makes the "every number is reproducible" claim true.
-- [ ] `apps/api/app/services/`: a thin snapshot service that runs the metrics engine for a repository/window and persists a `metric_snapshots` row (`model_version`, inputs, computed_at).
-- [ ] `GET /repositories/{id}/metrics` endpoint returning the current snapshot.
+- [x] `packages/analytics/src/analytics/metrics.py`: implement each metric function against the Phase 1 fixtures first, then against real synced data.
+- [x] `packages/analytics/src/analytics/models.py`: the plain dataclasses the analytics package operates on (independent of the API's SQLAlchemy models).
+- [x] `packages/analytics/tests/test_metrics.py`: hand-calculate expected values for each fixture timeline and assert against them — this is the test suite that makes the "every number is reproducible" claim true.
+- [x] `apps/api/app/services/metric_snapshot_service.py`: a thin snapshot service that runs the metrics engine for a repository/window and persists a `metric_snapshots` row (`model_version`, inputs, computed_at). Runs automatically after every successful sync.
+- [x] `GET /repositories/{id}/metrics` endpoint returning the current snapshot, plus `POST /repositories/{id}/metrics/snapshots[?analysis_at=…]` to compute one on demand.
 
 **Done when:** for every fixture in `tests/fixtures/`, the API-computed metric matches the hand-calculated value in the test, including the "insufficient data" case.
 

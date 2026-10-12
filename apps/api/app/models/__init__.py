@@ -1,6 +1,7 @@
 from app.models.commit import Commit
 from app.models.github_connection import GithubConnection
 from app.models.issue import Issue
+from app.models.metric_snapshot import MetricSnapshot
 from app.models.milestone import Milestone
 from app.models.pull_request import PullRequest
 from app.models.repository import Repository
@@ -12,6 +13,7 @@ __all__ = [
     "Commit",
     "GithubConnection",
     "Issue",
+    "MetricSnapshot",
     "Milestone",
     "PullRequest",
     "Repository",

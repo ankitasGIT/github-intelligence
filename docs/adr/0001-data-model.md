@@ -37,7 +37,7 @@ repositories ──< metric_snapshots ──< findings ──< recommendations
 | `review_requests` | `pull_request_id`, `requested_reviewer_login`, `is_outstanding` (bool — cleared when a review is submitted or the request is removed; §5 concentration) |
 | `issues` | `created_at`, `closed_at`, `updated_at` (§6/§7) |
 | `milestones` | `due_on`, `open_issue_count`, `closed_issue_count` (future `MILESTONE_AT_RISK` rule) |
-| `metric_snapshots` | `repository_id`, `window_start`, `window_end`, `baseline_start`, `baseline_end`, `model_version`, `computed_at`, `inputs` (JSONB) |
+| `metric_snapshots` | `repository_id`, `analysis_at`, `window_start`, `window_end`, `baseline_start`, `baseline_end`, `model_version`, `computed_at`, `inputs` (JSONB: thresholds, input row counts, source sync run), `metrics` (JSONB: the full serialized metrics report). Added in Phase 3: `analysis_at` (the "as of" instant, distinct from `computed_at`) and `metrics` (the computed values themselves). Rows are immutable. |
 | `findings` | `metric_snapshot_id`, `type`, `severity`, `confidence`, `evidence` (JSONB) |
 | `recommendations` | `finding_id`, `rank`, `action` |
 

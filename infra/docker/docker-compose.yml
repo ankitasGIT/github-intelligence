@@ -29,8 +29,8 @@ services:
 
   api:
     build:
-      context: ../../apps/api
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: apps/api/Dockerfile
     env_file:
       - path: ../../.env
         required: false
@@ -47,13 +47,14 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ../../apps/api:/app
+      - ../../apps/api:/workspace/apps/api
+      - ../../packages/analytics:/workspace/packages/analytics
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
   worker:
     build:
-      context: ../../apps/api
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: apps/api/Dockerfile
     env_file:
       - path: ../../.env
         required: false
@@ -69,7 +70,8 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ../../apps/api:/app
+      - ../../apps/api:/workspace/apps/api
+      - ../../packages/analytics:/workspace/packages/analytics
 
 volumes:
   db_data:
