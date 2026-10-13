@@ -72,11 +72,11 @@ Goal: every metric from `metric-definitions.md` is computed from stored data and
 
 Goal: the five rules from IMPLEMENTATION_PLAN.md §5 fire correctly, deterministically, on the fixtures.
 
-- [ ] `packages/analytics/src/detectors.py`: implement `REVIEW_BOTTLENECK`, `STALE_PULL_REQUESTS`, `ISSUE_BACKLOG_GROWTH`, `OVERSIZED_PULL_REQUESTS`, `MILESTONE_AT_RISK`, each returning a typed finding with `severity`, `confidence`, and an `evidence` payload.
-- [ ] `packages/analytics/src/tests/test_detectors.py`: one test per rule per fixture scenario (fires / doesn't fire / boundary / insufficient data).
-- [ ] Health score module: the weighted formula from IMPLEMENTATION_PLAN.md §5 (`0.30 delivery + 0.25 reviews + 0.20 issues + 0.15 PR quality + 0.10 activity`), versioned.
-- [ ] Recommendation mapping: finding type → ranked actions, fully deterministic (no LLM).
-- [ ] API endpoints: `GET /repositories/{id}/dashboard`, `GET /repositories/{id}/findings`, `GET /repositories/{id}/findings/{finding_id}`, `GET /repositories/{id}/recommendations`.
+- [x] `packages/analytics/src/analytics/detection.py`: implement `REVIEW_BOTTLENECK`, `STALE_PULL_REQUESTS`, `ISSUE_BACKLOG_GROWTH`, `OVERSIZED_PULL_REQUESTS`, `MILESTONE_AT_RISK`, each returning a typed finding with `severity`, `confidence`, and an `evidence` payload.
+- [x] `packages/analytics/tests/test_detection.py`: one test per rule per fixture scenario (fires / doesn't fire / boundary / insufficient data).
+- [x] Health score module (`analytics/health.py`): the weighted formula from IMPLEMENTATION_PLAN.md §5 (`0.30 delivery + 0.25 reviews + 0.20 issues + 0.15 PR quality + 0.10 activity`), versioned as `health-v1`.
+- [x] Recommendation mapping (`analytics/recommendations.py`): finding type → ranked actions, fully deterministic (no LLM).
+- [x] API endpoints: `GET /repositories/{id}/dashboard`, `GET /repositories/{id}/findings`, `GET /repositories/{id}/findings/{finding_id}`, `GET /repositories/{id}/recommendations` (plus `GET /metric-definitions`).
 
 **Done when:** the seeded review-delay fixture produces a `REVIEW_BOTTLENECK` finding with the exact evidence numbers the fixture implies, end to end through the API.
 

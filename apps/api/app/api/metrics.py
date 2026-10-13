@@ -18,7 +18,6 @@ router = APIRouter(prefix="/repositories", tags=["metrics"])
 
 
 def _to_read(snapshot: MetricSnapshot) -> MetricSnapshotRead:
-    inputs = snapshot.inputs
     return MetricSnapshotRead.model_validate(
         {
             "id": snapshot.id,
@@ -26,19 +25,8 @@ def _to_read(snapshot: MetricSnapshot) -> MetricSnapshotRead:
             "analysis_at": snapshot.analysis_at,
             "computed_at": snapshot.computed_at,
             "analysis_version": snapshot.model_version,
-            "window": AnalysisWindowRead(
-                current_start=snapshot.window_start,
-                current_end=snapshot.window_end,
-                baseline_start=snapshot.baseline_start,
-                baseline_end=snapshot.baseline_end,
-            ),
-            "data_completeness": DataCompletenessRead(
-                has_synced=inputs.get("source_sync_run_id") is not None,
-                source_sync_run_id=inputs.get("source_sync_run_id"),
-                source_synced_at=inputs.get("source_synced_at"),
-                pull_requests_analyzed=inputs.get("pull_requests", 0),
-                issues_analyzed=inputs.get("issues", 0),
-            ),
+            "window": AnalysisWindowRead.from_snapshot(snapshot),
+            "data_completeness": DataCompletenessRead.from_snapshot(snapshot),
             "metrics": snapshot.metrics,
         }
     )

@@ -100,6 +100,20 @@ curl "http://localhost:8000/repositories/<id>/metrics"                          
 
 Every sample-based metric reports its raw value plus `status: "ok" | "insufficient_data"` — small samples are disclosed, never hidden or silently trusted.
 
+### Findings, health, and recommendations
+
+Each snapshot also runs the detection rules (`rules-v1`), the health model (`health-v1`), and the recommendation playbooks, and stores the results alongside the metrics. Rules, the confidence formula, and the health penalties are documented in [docs/metric-definitions.md](docs/metric-definitions.md#detection-rules-rules-v1).
+
+```bash
+curl "http://localhost:8000/repositories/<id>/dashboard"                      # health, findings, actions, metrics, trend, review queue
+curl "http://localhost:8000/repositories/<id>/findings"                       # ranked findings from the latest snapshot
+curl "http://localhost:8000/repositories/<id>/findings/<finding_id>"          # evidence, source items, actions, definitions
+curl "http://localhost:8000/repositories/<id>/recommendations"                # actions in the order to do them
+curl "http://localhost:8000/metric-definitions"                               # every metric and rule definition
+```
+
+Every finding carries its `evidence` numbers, the PRs, issues, or milestones behind them (with GitHub links), the metric definitions it relies on, and a deterministic `confidence` breakdown. No LLM is involved.
+
 ### Tests, lint, and type-check
 
 ```bash

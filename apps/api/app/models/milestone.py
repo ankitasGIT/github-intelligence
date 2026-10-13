@@ -25,6 +25,8 @@ class Milestone(Base):
     due_on: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     open_issues: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     closed_issues: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    # Null for rows synced before Phase 4; MILESTONE_AT_RISK needs it to measure pace.
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     synced_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )

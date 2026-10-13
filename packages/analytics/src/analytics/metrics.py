@@ -10,7 +10,7 @@ Section numbers (§N) refer to docs/metric-definitions.md.
 
 from collections import Counter
 from collections.abc import Iterable, Sequence
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from statistics import median
 from typing import Any
@@ -24,6 +24,7 @@ from analytics.models import (
     RepositoryData,
     Window,
 )
+from analytics.serialization import to_jsonable
 
 # Bump whenever a formula, inclusion rule, or default threshold changes. Stored on every
 # snapshot so historical numbers are never silently reinterpreted.
@@ -154,17 +155,7 @@ class MetricsReport:
 
     def to_dict(self) -> dict[str, Any]:
         """JSON-safe representation (datetimes as ISO-8601 strings, tuples as lists)."""
-        return _jsonable(asdict(self))  # type: ignore[no-any-return]
-
-
-def _jsonable(value: Any) -> Any:
-    if isinstance(value, datetime):
-        return value.isoformat()
-    if isinstance(value, dict):
-        return {k: _jsonable(v) for k, v in value.items()}
-    if isinstance(value, list | tuple):
-        return [_jsonable(v) for v in value]
-    return value
+        return to_jsonable(self)  # type: ignore[no-any-return]
 
 
 # --- Shared helpers -------------------------------------------------------------------------
