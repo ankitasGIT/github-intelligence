@@ -30,6 +30,7 @@ class PullRequest:
     reopened: bool = False
     additions: int = 0
     deletions: int = 0
+    changed_files: int = 0
     reviews: tuple[Review, ...] = ()
     # Outstanding review requests only -- feeds review concentration (§5).
     requested_reviewers: tuple[str, ...] = ()
@@ -74,9 +75,24 @@ class Issue:
 
 
 @dataclass(frozen=True)
+class Milestone:
+    """Current-state milestone counts as last synced -- GitHub reports open/closed issue totals,
+    not their history, so milestone pace is measured since `created_at` (see MILESTONE_AT_RISK)."""
+
+    number: int
+    title: str
+    state: str
+    due_on: datetime | None
+    open_issues: int
+    closed_issues: int
+    created_at: datetime | None = None
+
+
+@dataclass(frozen=True)
 class RepositoryData:
     pull_requests: tuple[PullRequest, ...] = ()
     issues: tuple[Issue, ...] = ()
+    milestones: tuple[Milestone, ...] = ()
 
 
 @dataclass(frozen=True)

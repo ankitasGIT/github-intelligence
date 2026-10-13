@@ -133,6 +133,7 @@ def upsert_milestone(session: Session, repository_id: UUID, gh_milestone: dict[s
         "due_on": _parse(gh_milestone.get("due_on")),
         "open_issues": gh_milestone.get("open_issues", 0),
         "closed_issues": gh_milestone.get("closed_issues", 0),
+        "created_at": _parse(gh_milestone.get("created_at")),
     }
     stmt = _upsert_stmt(Milestone, values, ["repository_id", "github_node_id"])
     session.execute(stmt)

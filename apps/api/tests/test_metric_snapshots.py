@@ -2,90 +2,16 @@
 snapshot through the API reproduces the hand-calculated values in tests/fixtures/*.json."""
 
 import json
-from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
+from seeding import FIXTURE_NAMES, FIXTURES_DIR, parse_ts, seed
 from sqlalchemy.orm import Session
 
-from app.db.session import get_db
-from app.main import app
-from app.models.issue import Issue
-from app.models.pull_request import PullRequest
 from app.models.repository import Repository
-from app.models.review import Review
-from app.models.review_request import ReviewRequest
 from app.models.sync_run import SyncRun, SyncRunStatus
-
-FIXTURES_DIR = Path(__file__).resolve().parents[3] / "tests" / "fixtures"
-FIXTURE_NAMES = sorted(p.stem for p in FIXTURES_DIR.glob("*.json"))
-
-
-@pytest.fixture
-def client(db_session: Session) -> Iterator[TestClient]:
-    app.dependency_overrides[get_db] = lambda: db_session
-    try:
-        yield TestClient(app)
-    finally:
-        app.dependency_overrides.clear()
-
-
-def _ts(value: str | None) -> datetime | None:
-    return datetime.fromisoformat(value) if value else None
-
-
-def _seed(session: Session, repository: Repository, fixture: dict[str, Any]) -> None:
-    for pr in fixture["pull_requests"]:
-        row = PullRequest(
-            repository_id=repository.id,
-            github_node_id=pr["github_node_id"],
-            number=pr["number"],
-            title=f"PR {pr['number']}",
-            author_login=pr["author"],
-            is_draft=pr["is_draft"],
-            ready_for_review_at=_ts(pr["ready_for_review_at"]),
-            created_at=_ts(pr["created_at"]),
-            updated_at=_ts(pr["updated_at"]),
-            closed_at=_ts(pr["closed_at"]),
-            merged_at=_ts(pr["merged_at"]),
-            reopened=pr["reopened"],
-            reopen_count=pr["reopen_count"],
-            additions=pr["additions"],
-            deletions=pr["deletions"],
-            changed_files=pr["changed_files"],
-            source_updated_at=_ts(pr["updated_at"]),
-        )
-        session.add(row)
-        session.flush()
-        for i, review in enumerate(pr["reviews"]):
-            session.add(
-                Review(
-                    pull_request_id=row.id,
-                    github_node_id=f"{pr['github_node_id']}_RV{i}",
-                    reviewer_login=review["reviewer"],
-                    state=review["state"],
-                    submitted_at=_ts(review["submitted_at"]),
-                )
-            )
-        for login in pr["requested_reviewers"]:
-            session.add(ReviewRequest(pull_request_id=row.id, requested_reviewer_login=login))
-    for issue in fixture["issues"]:
-        session.add(
-            Issue(
-                repository_id=repository.id,
-                github_node_id=issue["github_node_id"],
-                number=issue["number"],
-                title=f"Issue {issue['number']}",
-                created_at=_ts(issue["created_at"]),
-                updated_at=_ts(issue["updated_at"]),
-                closed_at=_ts(issue["closed_at"]),
-                source_updated_at=_ts(issue["updated_at"]),
-            )
-        )
-    session.commit()
 
 
 def _assert_sample(actual: dict[str, Any], expected: dict[str, Any]) -> None:
@@ -109,7 +35,7 @@ def test_api_snapshot_matches_hand_calculated_fixture(
 ) -> None:
     fixture = json.loads((FIXTURES_DIR / f"{name}.json").read_text())
     expected = fixture["expected"]
-    _seed(db_session, seeded_repository, fixture)
+    seed(db_session, seeded_repository, fixture)
 
     response = client.post(
         f"/repositories/{seeded_repository.id}/metrics/snapshots",
@@ -119,7 +45,7 @@ def test_api_snapshot_matches_hand_calculated_fixture(
     body = response.json()
     window = fixture["window"]
     for key in ("current_start", "current_end", "baseline_start", "baseline_end"):
-        assert _ts(body["window"][key]) == _ts(window[key])
+        assert parse_ts(body["window"][key]) == parse_ts(window[key])
     metrics = body["metrics"]
 
     for metric in ("pr_cycle_time", "review_wait", "merge_wait"):
@@ -153,7 +79,7 @@ def test_get_metrics_returns_latest_snapshot(
     client: TestClient, db_session: Session, seeded_repository: Repository
 ) -> None:
     fixture = json.loads((FIXTURES_DIR / "review_bottleneck.json").read_text())
-    _seed(db_session, seeded_repository, fixture)
+    seed(db_session, seeded_repository, fixture)
     finished = datetime(2026, 9, 25, 8, 0, tzinfo=UTC)
     db_session.add(
         SyncRun(
@@ -176,7 +102,7 @@ def test_get_metrics_returns_latest_snapshot(
     assert body["id"] == newer.json()["id"]
     assert body["analysis_version"] == "metrics-v1"
     assert body["data_completeness"]["has_synced"] is True
-    assert _ts(body["data_completeness"]["source_synced_at"]) == finished
+    assert parse_ts(body["data_completeness"]["source_synced_at"]) == finished
     assert body["data_completeness"]["pull_requests_analyzed"] == len(fixture["pull_requests"])
     assert body["metrics"]["review_wait"]["pct_change"] == pytest.approx(233.33, abs=0.01)
 
@@ -202,7 +128,7 @@ def test_issue_backlog_growth_through_database(
         issue(8, 2),
         issue(9, 1),
     ]
-    _seed(db_session, seeded_repository, {"pull_requests": [], "issues": issues})
+    seed(db_session, seeded_repository, {"pull_requests": [], "issues": issues})
 
     response = client.post(
         f"/repositories/{seeded_repository.id}/metrics/snapshots",

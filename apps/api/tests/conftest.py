@@ -8,7 +8,10 @@ from cryptography.fernet import Fernet
 os.environ.setdefault("TOKEN_ENCRYPTION_KEY", Fernet.generate_key().decode())
 os.environ.setdefault("GITHUB_TOKEN", "test-token-unused-mocked")
 
+from collections.abc import Iterator  # noqa: E402
+
 import pytest  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
 from sqlalchemy import create_engine  # noqa: E402
 from sqlalchemy.orm import Session, sessionmaker  # noqa: E402
 
@@ -16,6 +19,8 @@ from app import models  # noqa: E402,F401 -- populates Base.metadata before crea
 from app.core.config import get_settings  # noqa: E402
 from app.core.security import encrypt_token  # noqa: E402
 from app.db.base import Base  # noqa: E402
+from app.db.session import get_db  # noqa: E402
+from app.main import app  # noqa: E402
 from app.models.github_connection import GithubConnection  # noqa: E402
 from app.models.repository import Repository  # noqa: E402
 
@@ -61,3 +66,12 @@ def seeded_repository(db_session: Session) -> Repository:
     db_session.commit()
     db_session.refresh(repository)
     return repository
+
+
+@pytest.fixture
+def client(db_session: Session) -> Iterator[TestClient]:
+    app.dependency_overrides[get_db] = lambda: db_session
+    try:
+        yield TestClient(app)
+    finally:
+        app.dependency_overrides.clear()

@@ -1,6 +1,6 @@
 # Metric Definitions
 
-This document is the contract for the analytics engine (Phase 3) and detection engine (Phase 4). Every metric below must be implemented exactly as defined here — if a definition needs to change, this file changes first, and the change is versioned (see "Metric versioning").
+This document is the contract for the analytics engine (Phase 3), and the detection engine and health model (Phase 4). Every metric below must be implemented exactly as defined here — if a definition needs to change, this file changes first, and the change is versioned (see "Metric versioning").
 
 ## Conventions
 
@@ -136,17 +136,87 @@ Decisions the definitions above left open, fixed here so the engine and fixtures
 - **"Open at instant T"** (pending count, staleness, backlog): `created_at <= T` and not yet merged/closed at `T`.
 - **Known limitation.** GitHub bumps a PR's `updated_at` when a review is submitted, so on real synced data §4's "no review after the latest update" is true of nearly every open PR. Pending-review count therefore currently approximates "open, non-draft PRs". Refining this needs timeline events (author pushes/comments) and is a future version.
 
-## Detection rule thresholds (cross-reference)
+## Detection rules (rules-v1)
 
-These consume the metrics above. Full detector implementation is Phase 4; thresholds are fixed here so fixtures can encode expected findings now.
+The detection engine (`analytics.detection`, version **`rules-v1`**) evaluates these rules against a computed metrics report. A rule never fires on a metric whose `status` is `insufficient_data`. Thresholds live in `analytics.detection.DetectionConfig`; changing one is a new rules version.
 
-| Rule | Trigger |
-|---|---|
-| `REVIEW_BOTTLENECK` | Review-wait median rises ≥50% vs. baseline, current sample `n >= 5`, and pending-review count is elevated relative to its own recent norm. |
-| `STALE_PULL_REQUESTS` | At least 3 open, non-draft PRs are stale (see §6). |
-| `ISSUE_BACKLOG_GROWTH` | Open issues increase ≥25% vs. baseline, and baseline count `>= 5` (see §7). |
-| `OVERSIZED_PULL_REQUESTS` | At least 25% of a window's merged/open non-draft PRs exceed the oversized threshold, with `n >= 5` PRs in the sample. |
-| `MILESTONE_AT_RISK` | A milestone's due date is near and its trailing completion rate is below what's required to finish on time. Full formula defined when Phase 4 implements this rule — not covered by a Phase 1 fixture. |
+Every finding stores: `severity`, a deterministic `confidence`, the `evidence` numbers that triggered it, the `affected_items` (PRs, issues, or milestones) behind those numbers, `metric_refs` (the sections of this document it relies on), and its `rule_version`. Findings are worded as likely contributing factors, never causes, and describe queues and distribution, not individual performance.
+
+### `REVIEW_BOTTLENECK`
+
+Fires when **all** hold:
+
+1. Review-wait (§2) current **and** baseline samples both meet `n_min`, and the median rose **≥ 50%**.
+2. The **awaiting-first-review count** now is **≥ 3** and **≥ 1.5×** its **baseline norm**.
+
+*Awaiting first review at instant T* = open, non-draft PRs that were reviewable at T (`ready_for_review_at or created_at <= T`) with no review submitted at or before T. Unlike §4, this can be reconstructed for any past instant from stored timestamps, because it doesn't depend on a PR's *current* `updated_at`. The **baseline norm** is the median of this count sampled once a day at `baseline_start + k days` for each of the 30 baseline days. Evidence also reports the §4 pending-review count and §5 review concentration.
+
+Severity: **high** if the review-wait increase is ≥ 100% (twice the threshold), else **medium**. Corroborating indicators: review concentration ≥ 50% (status ok); PR cycle time rising (current sample ok); at least one pending PR is also stale.
+
+Affected items: PRs awaiting first review, oldest-waiting first.
+
+### `STALE_PULL_REQUESTS`
+
+Fires when **at least 3** open, non-draft PRs are stale (§6). Severity **high** at ≥ 6, else **medium**. Corroborating: at least one stale PR has never been reviewed; the longest-idle PR has been idle ≥ 2× the staleness threshold. Affected items: the stale PRs, longest-idle first.
+
+### `ISSUE_BACKLOG_GROWTH`
+
+Fires when §7 has status ok (baseline open count ≥ 5) and growth is **≥ 25%**. Severity **high** at ≥ 50%, else **medium**. Corroborating: stale issues exist. Evidence includes open-issue age buckets (`under_7d`, `7_to_30d`, `30_to_90d`, `over_90d`). Affected items: the 10 oldest open issues.
+
+### `OVERSIZED_PULL_REQUESTS`
+
+Population: non-draft PRs merged in the current window (as §8) **plus** every open non-draft PR. Fires when the population has **≥ 5** PRs and **≥ 25%** exceed the §8 oversized threshold (> 400 lines). Severity **medium** at ≥ 50%, else **low**. Corroborating: §8 median size rose vs. baseline (both samples ok); PR cycle time rising. Evidence includes a size distribution (`up_to_100`, `101_to_400`, `401_to_1000`, `over_1000`). Affected items: the oversized PRs, largest first.
+
+### `MILESTONE_AT_RISK`
+
+Evaluated per milestone; the finding key is `MILESTONE_AT_RISK:<number>`. A milestone is evaluated only if it is open, has a `due_on`, has at least one open item, and is due within **14 days** (or is already overdue). It is at risk if:
+
+- it is **overdue** (`due_on <= analysis_at`), or
+- **observed pace < required pace**, where observed pace = `closed_issues / max(1, days since created_at)` and required pace = `open_issues / days until due_on`.
+
+GitHub reports only current open/closed totals for a milestone, not their history, so "trailing completion rate" in the MVP is the average pace since the milestone was created. A milestone with no `created_at` (synced before Phase 4) is evaluated only for being overdue. Its pace is never guessed. Milestone counts are as of the last sync, not reconstructed as of `analysis_at`.
+
+Severity **high** if overdue or the required pace is ≥ 2× the observed pace, else **medium**. Corroborating: overdue; more items open than closed.
+
+### Confidence
+
+```text
+confidence = 0.4 * sample + 0.4 * strength + 0.2 * corroboration
+
+sample        = min(1, n / (2 * n_min))           -- 1.0 at twice the minimum sample
+strength      = min(1, observed / threshold / 2)  -- 0.5 exactly at the trigger, 1.0 at twice it
+corroboration = share of the rule's corroborating indicators that hold
+```
+
+Level: **high** ≥ 0.75, **medium** ≥ 0.5, otherwise **low**. Per rule, `n` / `n_min` are: review-wait current sample / `n_min`; stale PR count / 3; baseline open issues / 5; oversized population / 5; milestone total items / 5. For a milestone, `observed / threshold` is required pace ÷ observed pace (treated as maximal when overdue or nothing has closed yet).
+
+### Ranking and recommendations
+
+Findings rank by severity (high first), then confidence (descending), then the rule order above. Each rule maps to a fixed playbook of recommended actions (`analytics.recommendations`), templated from that finding's evidence and affected items. Recommendations inherit the finding order and get a global `rank` starting at 1.
+
+## Health model (health-v1)
+
+`analytics.health`, version **`health-v1`**. Five dimensions each start at 100 and lose capped penalty points. A penalty applies only when its signal's metric has status ok. Improvements never add points.
+
+| Dimension (weight) | Signal | Penalty | Cap | Primary |
+|---|---|---|---|---|
+| Delivery (0.30) | PR cycle time % change vs baseline | 0.4 / +1% | 40 | yes |
+| | Merge-wait % change vs baseline | 0.2 / +1% | 20 | yes |
+| Reviews (0.25) | Review-wait % change vs baseline | 0.4 / +1% | 40 | yes |
+| | Review concentration above 50% | 1 / percentage point | 25 | no |
+| | Stale open PRs | 5 each | 25 | no |
+| Issues (0.20) | Issue backlog growth % | 0.8 / +1% | 40 | yes |
+| | Stale open issues | 3 each | 30 | no |
+| PR quality (0.15) | Share of merged PRs oversized (§8, current sample ok) | 1 / percentage point | 50 | yes |
+| Activity (0.10) | Merged-PR throughput vs. baseline weekly rate (`baseline n * 7/30`, baseline sample ok) | 0.5 / -1% | 50 | yes |
+
+Duration signals require both current and baseline samples to meet `n_min`. A dimension is **scored** only if at least one *primary* signal is evaluable. Otherwise it is `insufficient_data`, and its secondary penalties are not applied. The **overall** score is the weighted mean of scored dimensions, with weights renormalized over those dimensions. It is reported only when **delivery and reviews** are both scored; otherwise the overall score is `insufficient_data`. Every snapshot stores each penalty's signal value, points, cap, and formula.
+
+Worked example (`review_bottleneck.json`): delivery 60 (cycle time +175% → 40, capped), reviews 33.6 (review-wait capped 40 + concentration 21.43 + one stale PR 5), issues insufficient, PR quality 100, activity 100 → overall `(0.30·60 + 0.25·33.6 + 0.15·100 + 0.10·100) / 0.80 ≈ 64.2`.
+
+## Weekly trend
+
+Each snapshot stores eight consecutive 7-day windows ending at `analysis_at`, with the PR cycle time (§1) and review-wait (§2) median, `n`, and status for each. All are computed as of `analysis_at`, so the newest point equals the snapshot's current-window values.
 
 ## How to read `expected` blocks in fixtures
 

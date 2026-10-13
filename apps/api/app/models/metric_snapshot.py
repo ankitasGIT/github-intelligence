@@ -33,6 +33,12 @@ class MetricSnapshot(Base):
     inputs: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
     # The full analytics.MetricsReport, serialized.
     metrics: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    # Phase 4 additions; null on snapshots computed before detection/health existed.
+    detection_version: Mapped[str | None] = mapped_column(String, nullable=True)
+    health_version: Mapped[str | None] = mapped_column(String, nullable=True)
+    # analytics.HealthReport and the weekly trend series, serialized.
+    health: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    trend: Mapped[list[dict[str, Any]] | None] = mapped_column(JSONB, nullable=True)
     computed_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
